@@ -2,7 +2,7 @@ from typing import Any, Dict, Generic, List, Optional, TypeVar
 
 from domain.shared.base_entity import BaseEntity
 
-T = TypeVar("T", bound="BaseEntity")
+T = TypeVar('T', bound=BaseEntity)
 
 
 class BaseRepository(Generic[T]):
