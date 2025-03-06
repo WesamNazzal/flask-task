@@ -1,32 +1,44 @@
-from typing import Any, Dict, Generic, List, Optional, TypeVar
+from typing import Any, Dict, List, Optional
+from sqlalchemy import select, insert, update, delete
+from sqlalchemy.sql.schema import Table
+from infrastructure.unit_of_work import UnitOfWork
 
-from domain.shared.base_entity import BaseEntity
 
-T = TypeVar('T', bound=BaseEntity)
+class BaseRepository:
+    def __init__(self, table: Table):
+        self.table = table
 
+    def get_all(self) -> List[Dict[str, Any]]:
+        with UnitOfWork() as uow:
+            result = uow.connection.execute(select(self.table)).fetchall()
+            return [dict(row._mapping) for row in result]
 
-class BaseRepository(Generic[T]):
-    def __init__(self) -> None:
-        self.storage: Dict[int, T] = {}
+    def get(self, record_id: int) -> Optional[Dict[str, Any]]:
+        with UnitOfWork() as uow:
+            result = uow.connection.execute(
+                select(self.table).where(self.table.c.id == record_id)
+            ).first()
+            return dict(result._mapping) if result else None
 
-    def add(self, obj: T) -> T:
-        self.storage[obj.id] = obj
-        return obj
+    def create(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        with UnitOfWork() as uow:
+            stmt = insert(self.table).values(**data).returning(self.table)
+            result = uow.connection.execute(stmt)
+            return dict(result.fetchone()._mapping)
 
-    def get_all(self) -> List[T]:
-        return list(self.storage.values())
+    def update(self, record_id: int, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        with UnitOfWork() as uow:
+            stmt = (
+                update(self.table)
+                .where(self.table.c.id == record_id)
+                .values(**data)
+                .returning(self.table)
+            )
+            result = uow.connection.execute(stmt)
+            return dict(result.fetchone()._mapping) if result.rowcount > 0 else None
 
-    def get(self, obj_id: int) -> Optional[T]:
-        return self.storage.get(obj_id)
-
-    def update(self, obj_id: int, data: Dict[str, Any]) -> Optional[T]:
-        obj = self.get(obj_id)
-        if obj:
-            for key, value in data.items():
-                if hasattr(obj, key):
-                    setattr(obj, key, value)
-            return obj
-        return None
-
-    def delete(self, obj_id: int) -> bool:
-        return self.storage.pop(obj_id, None) is not None
+    def delete(self, record_id: int) -> bool:
+        with UnitOfWork() as uow:
+            stmt = delete(self.table).where(self.table.c.id == record_id)
+            result = uow.connection.execute(stmt)
+            return result.rowcount > 0

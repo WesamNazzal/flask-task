@@ -1,30 +1,21 @@
-from typing import Any, Dict, List, Optional, Tuple, Union
-
-from flask import Response, jsonify, request
 from flask.views import MethodView
-
+from flask import request, jsonify
 from application.student_service import StudentService
 
+student_service = StudentService()
 
 class StudentAPI(MethodView):
-    def get(self, student_id: Optional[int] = None) -> Tuple[Response, int]:
-        response: Union[List[Dict[str, Any]], Dict[str, Any]]
+
+    def get(self, student_id=None):
         if student_id is None:
-            response, status = StudentService.get_all_students()
-        else:
-            response, status = StudentService.get_student(student_id)
-        return jsonify(response), status
+            return jsonify(student_service.get_all()[0]), 200
+        return jsonify(student_service.get_by_id(student_id)[0]), student_service.get_by_id(student_id)[1]
 
-    def post(self) -> Tuple[Response, int]:
-        data = request.get_json()
-        response, status = StudentService.create_student(data)
-        return jsonify(response), status
+    def post(self):
+        return jsonify(student_service.create_student(request.json)[0]), student_service.create_student(request.json)[1]
 
-    def patch(self, student_id: int) -> Tuple[Response, int]:
-        data = request.get_json()
-        response, status = StudentService.update_student(student_id, data)
-        return jsonify(response), status
+    def patch(self, student_id):
+        return jsonify(student_service.update(student_id, request.json)[0]), student_service.update(student_id, request.json)[1]
 
-    def delete(self, student_id: int) -> Tuple[Response, int]:
-        response, status = StudentService.delete_student(student_id)
-        return jsonify(response), status
+    def delete(self, student_id):
+        return jsonify(student_service.delete(student_id)[0]), student_service.delete(student_id)[1]
