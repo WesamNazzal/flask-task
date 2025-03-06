@@ -1,30 +1,35 @@
-from sqlalchemy import create_engine
+from typing import Optional, Type
+
 from sqlalchemy.engine import Connection
+
 from infrastructure.database.connection.database import engine
 
 
 class UnitOfWork:
-    def __init__(self):
+    def __init__(self) -> None:
         self.connection: Connection = engine.connect()
         self.transaction = self.connection.begin()
 
-    def commit(self):
+    def commit(self) -> None:
         try:
             self.transaction.commit()
         except Exception as e:
             self.transaction.rollback()
             raise e
 
-    def rollback(self):
+    def rollback(self) -> None:
         self.transaction.rollback()
 
-    def close(self):
+    def close(self) -> None:
         self.connection.close()
 
-    def __enter__(self):
+    def __enter__(self) -> 'UnitOfWork':
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self,
+                 exc_type: Optional[Type[BaseException]],
+                 exc_val: Optional[BaseException],
+                 exc_tb: Optional[object]) -> None:
         if exc_type:
             self.rollback()
         else:

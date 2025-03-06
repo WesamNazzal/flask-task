@@ -1,4 +1,5 @@
 from flask import Flask
+
 from config import Config
 from infrastructure.database.connection.database import engine, metadata
 from presentation.student_route import StudentAPI

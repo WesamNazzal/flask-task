@@ -1,4 +1,5 @@
-from sqlalchemy import Table, Column, Integer, String
+from sqlalchemy import Column, Integer, String, Table
+
 from infrastructure.database.connection.database import metadata
 
 student_table = Table(

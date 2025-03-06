@@ -1,11 +1,14 @@
 from typing import Any, Dict, Tuple
 from application.base_service import BaseService
 from infrastructure.repository.student_repository import StudentRepository
-class StudentService(BaseService):
-    def __init__(self):
-        super().__init__(StudentRepository)
+from sqlalchemy.sql.schema import Table
+
+class StudentService(BaseService[Table]):
+    def __init__(self) -> None:
+        super().__init__(StudentRepository())  
 
     def create_student(self, data: Dict[str, Any]) -> Tuple[Dict[str, Any], int]:
-        if not all(k in data for k in ('name', 'age', 'grade')):
-            return {'error': 'Missing required fields'}, 400
-        return self.create(data)
+        created_record = self.create(data)
+        if created_record is None: 
+            return {'error': 'Failed to create student'}, 500
+        return created_record, 201  
